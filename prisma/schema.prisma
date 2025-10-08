@@ -1,0 +1,17 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Nous ciblons PostgreSQL (ex: Supabase). Fournir DATABASE_URL dans .env
+// Exemple : postgresql://postgres:postgres@localhost:5432/shadowrun
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model TestHello {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  content   String
+}
