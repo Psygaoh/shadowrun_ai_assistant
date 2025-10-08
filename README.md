@@ -64,7 +64,8 @@ Ce dépôt contient désormais une base Next.js 14 minimaliste :
 │   ├── globals.css     # Style global très léger (mode sombre)
 │   ├── layout.tsx      # Layout racine
 │   └── page.tsx        # Page principale qui consomme l’API
-├── lib/hello.ts        # Logique partagée (message backend/frontend)
+├── lib/hello.ts        # Lecture du message depuis Postgres via Prisma
+├── lib/prisma.ts       # Client Prisma mutualisé pour Next.js
 ├── prisma/schema.prisma# Table de test "TestHello"
 ├── .github/workflows/  # Workflow CI
 └── ...
@@ -90,10 +91,31 @@ La page d’accueil appelle `/api/hello` et affiche le message retourné par l�
 npm run lint
 ```
 
-### Base de données (placeholder)
-Le dossier `prisma/` prépare l’intégration avec une base PostgreSQL (p. ex. Supabase). La table provisoire `TestHello` servira uniquement de test et pourra être supprimée lors des prochains travaux.
+### Base de données & Prisma
+- `prisma/schema.prisma` cible PostgreSQL (local ou Supabase).
+- `prisma/migrations/` contient la migration initiale créant la table `TestHello`.
+- `lib/hello.ts` interroge désormais la table via Prisma. Si aucune ligne n’existe, un message par défaut est renvoyé.
 
-Pensez à copier `.env.example` vers `.env` et à y renseigner `DATABASE_URL` avant de lancer Prisma.
+Copiez les exemples d’environnement pour configurer Prisma :
+
+```bash
+cp .env.local.example .env.local           # développement (Postgres local)
+cp .env.production.example .env.production # déploiement (Supabase)
+```
+
+> **Important :** adaptez `DATABASE_URL` et `DIRECT_URL` aux connexions fournies par Supabase. `DATABASE_URL` doit utiliser PgBouncer (`?pgbouncer=true&connection_limit=1`) alors que `DIRECT_URL` pointe vers le port standard 5432 et sert aux migrations Prisma.
+
+#### Commandes utiles
+- `npx prisma migrate dev` — applique la migration à votre base locale et génère le client.
+- `npx prisma migrate deploy` — applique les migrations sur Supabase (utilise `DIRECT_URL`).
+- `npx prisma studio` — optionnel : UI pour vérifier les données.
+
+> Lors de la première exécution, pensez à insérer au moins une ligne dans `TestHello` (via Prisma Studio ou un script) afin que la page affiche un message provenant de la base.
+
+### Gestion des variables d’environnement
+- `.env.local.example` et `.env.production.example` recensent toutes les variables nécessaires (Postgres + clés Supabase).
+- Le workflow GitHub Actions [`sync-vercel-env.yml`](.github/workflows/sync-vercel-env.yml) pousse ces variables vers Vercel à partir des secrets GitHub (`DATABASE_URL`, `DIRECT_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, en plus de `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`).
+- Côté Vercel, assurez-vous que le projet est bien lié à Supabase afin de disposer des bons identifiants. Lancez ensuite manuellement le workflow (`Actions` > `Sync environment with Vercel` > `Run workflow`) ou laissez-le s’exécuter lors du prochain push sur `main`.
 
 ### Déploiement
 Le workflow GitHub Actions `ci.yml` installe les dépendances, exécute `npm run lint` puis `npm run build`. Il constitue une base pour vérifier la qualité avant les déploiements (p. ex. sur Vercel).

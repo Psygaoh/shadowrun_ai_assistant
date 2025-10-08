@@ -1,0 +1,63 @@
+name: Sync environment with Vercel
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/sync-vercel-env.yml'
+      - '.env.production.example'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate Vercel credentials
+        run: |
+          set -euo pipefail
+          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "VERCEL_TOKEN, VERCEL_ORG_ID et VERCEL_PROJECT_ID doivent être définis dans les secrets GitHub." >&2
+            exit 1
+          fi
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@34
+
+      - name: Sync environment variables to Vercel
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+
+          sync_var() {
+            local name="$1"
+            local value="$2"
+
+            if [ -z "$value" ]; then
+              echo "[warning] Variable $name ignorée : aucun secret GitHub associé." >&2
+              return
+            fi
+
+            for target in production preview development; do
+              vercel env rm "$name" "$target" --yes --token "$VERCEL_TOKEN" >/dev/null 2>&1 || true
+              printf '%s' "$value" | vercel env add "$name" "$target" --yes --token "$VERCEL_TOKEN" >/dev/null
+              echo "[info] $name mis à jour pour l'environnement $target"
+            done
+          }
+
+          sync_var DATABASE_URL "$DATABASE_URL"
+          sync_var DIRECT_URL "$DIRECT_URL"
+          sync_var NEXT_PUBLIC_SUPABASE_URL "$NEXT_PUBLIC_SUPABASE_URL"
+          sync_var NEXT_PUBLIC_SUPABASE_ANON_KEY "$NEXT_PUBLIC_SUPABASE_ANON_KEY"
+          sync_var SUPABASE_SERVICE_ROLE_KEY "$SUPABASE_SERVICE_ROLE_KEY"
