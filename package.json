@@ -6,9 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "node ./scripts/run-prisma-migrate.mjs dev",
+    "prisma:migrate-deploy": "node ./scripts/run-prisma-migrate.mjs deploy",
+    "prisma:migrate-reset": "node ./scripts/run-prisma-migrate.mjs reset",
+    "prisma:studio": "prisma studio"
   },
   "dependencies": {
+    "@prisma/client": "5.11.0",
     "next": "14.1.0",
     "react": "18.2.0",
     "react-dom": "18.2.0"
