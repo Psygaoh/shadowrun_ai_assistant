@@ -8,8 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:migrate-deploy": "prisma migrate deploy",
+    "prisma:migrate": "node ./scripts/run-prisma-migrate.mjs dev",
+    "prisma:migrate-deploy": "node ./scripts/run-prisma-migrate.mjs deploy",
+    "prisma:migrate-reset": "node ./scripts/run-prisma-migrate.mjs reset",
     "prisma:studio": "prisma studio"
   },
   "dependencies": {

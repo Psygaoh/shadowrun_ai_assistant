@@ -106,9 +106,12 @@ cp .env.production.example .env.production # déploiement (Supabase)
 > **Important :** adaptez `DATABASE_URL` et `DIRECT_URL` aux connexions fournies par Supabase. `DATABASE_URL` doit utiliser PgBouncer (`?pgbouncer=true&connection_limit=1`) alors que `DIRECT_URL` pointe vers le port standard 5432 et sert aux migrations Prisma.
 
 #### Commandes utiles
-- `npx prisma migrate dev` — applique la migration à votre base locale et génère le client.
-- `npx prisma migrate deploy` — applique les migrations sur Supabase (utilise `DIRECT_URL`).
+- `npm run prisma:migrate` — applique la migration à votre base locale et génère le client.
+- `npm run prisma:migrate-deploy` — applique les migrations sur Supabase (le script force `DIRECT_URL` à basculer sur `DATABASE_URL` si la variable n’est pas définie).
+- `npm run prisma:migrate-reset` — réinitialise la base (utile pendant le développement).
 - `npx prisma studio` — optionnel : UI pour vérifier les données.
+
+> Les scripts `prisma:migrate*` définissent automatiquement `DIRECT_URL` à partir de `DATABASE_URL` lorsqu’elle est absente, ce qui évite l’erreur `Environment variable not found: DIRECT_URL` pendant le développement local.
 
 > Lors de la première exécution, pensez à insérer au moins une ligne dans `TestHello` (via Prisma Studio ou un script) afin que la page affiche un message provenant de la base.
 
